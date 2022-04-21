@@ -1,0 +1,41 @@
+version: "3.8"
+
+services:
+  app_movies:
+    build: .
+    container_name: app_movies
+    restart: always
+    volumes:
+      - .:/usr/src/app
+      - static_volume:/usr/src/app/app/static
+    env_file:
+      - ./.env
+    depends_on:
+      - db_movies
+
+  db_movies:
+    image: postgres:13-alpine
+    container_name: db_movies
+    restart: always
+    volumes:
+      - ./app/schema.sql:/docker-entrypoint-initdb.d/schema.sql
+      - postgres_data:/var/lib/postgresql/data/
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+
+  nginx:
+    build: ./nginx
+    container_name: nginx_movies
+    restart: on-failure
+    ports:
+      - "80:80"
+    volumes:
+      - static_volume:/www/static
+    depends_on:
+      - app_movies
+
+volumes:
+  postgres_data:
+  static_volume:
